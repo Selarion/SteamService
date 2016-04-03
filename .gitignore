@@ -4,3 +4,4 @@ executor/default_executor_log_file.html
 *.pyc
 cookies/*
 !cookies/.keep
+working/
