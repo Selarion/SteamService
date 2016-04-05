@@ -68,5 +68,4 @@ class Worker:
         self.in_check_item_classes = temporary_dict
 
 if __name__ == '__main__':
-    raw_input('test_branch')
     w = Worker()
