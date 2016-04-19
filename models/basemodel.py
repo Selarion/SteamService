@@ -4,7 +4,7 @@ from peewee import *
 
 
 def take_logpass_from_file():
-    with open('../models/database/db_info.txt') as f:
+    with open('../conf/db_info.txt') as f:
         data = f.read().split(',')
         for i in range(len(data)):
             word = data[i].strip()

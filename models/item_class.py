@@ -15,20 +15,18 @@ class ItemClass:
         self.__item_nameid = item_nameid
 
         self.buy_orders = buy_orders # This field not use now. For future.
-        self.sell_prices = sell_prices # This field not use now. For future.
+        self.sell_prices = sell_prices  # This field not use now. For future.
         self.lowest_sell_price = lowest_sell_price
         self.highest_buy_order = highest_buy_order
         self.profit = profit
 
-    def set_lowest_sell_price(self, lowest_sell_price, refresh_profit_flag=False):
+    def set_lowest_sell_price(self, lowest_sell_price):
         self.lowest_sell_price = lowest_sell_price
-        if refresh_profit_flag:
-            self._calculate_profit()
+        self.profit = None
 
-    def set_highest_buy_order(self, highest_buy_order, refresh_profit_flag=False):
+    def set_highest_buy_order(self, highest_buy_order):
         self.highest_buy_order = highest_buy_order
-        if refresh_profit_flag:
-            self._calculate_profit()
+        self.profit = None
 
     def get_name(self):
         return self.__name
@@ -49,6 +47,8 @@ class ItemClass:
         return self.highest_buy_order
 
     def get_profit(self):
+        if self.profit is None:
+            self._calculate_profit()
         return self.profit
 
     def _calculate_profit(self):

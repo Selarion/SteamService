@@ -1,6 +1,5 @@
 # -*- coding: utf-8-*-
 import Queue
-from grab import Grab
 
 
 class SteamAccount:
@@ -20,7 +19,6 @@ class SteamAccount:
             except Queue.Empty:
                 print 'self.in_executor_queue is empty'
                 break
-
 
     def get_input_queue(self):
         return self.input_queue
