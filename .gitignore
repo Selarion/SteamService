@@ -5,3 +5,4 @@ executor/default_executor_log_file.html
 cookies/*
 !cookies/.keep
 working/
+/rough_develop

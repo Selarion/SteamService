@@ -40,8 +40,8 @@ class Searcher:
             item_class.set_lowest_sell_price(lowest_sell_price)
             item_class.set_highest_buy_order(highest_buy_order)
         except Exception as inst:
-            print type(inst)  # the exception instance
-            print inst
+            # print type(inst)
+            # print inst
             return
         if item_class.get_profit() > 0:
             output_queue.put(item_class)
