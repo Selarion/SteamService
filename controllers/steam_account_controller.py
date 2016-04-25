@@ -12,7 +12,7 @@ class SteamAccountController():
             try:
                 new_task_from_executor = self.input_queue.get()
                 print(new_task_from_executor)
-            except:
+            except StandardError:
                 pass
 
     def get_input_queue(self):
