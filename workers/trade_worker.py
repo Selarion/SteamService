@@ -4,7 +4,7 @@ import time
 
 from executor.executor import Executor
 from searcher.searcher import Searcher
-from models.item_class_table import ItemClassTable
+from models.item_class import ItemClass
 from models.tasks.check_profit_trade_task import CheckProfitTradeTask
 from controllers.trade_worker_controller import TradeWorkerController
 
@@ -41,7 +41,7 @@ class TradeWorker:
 
     def __load_start_data(self):
         # This is temporary block. It's necessary before checker and executor was finale finished.
-        self.all_item_classes = set(ItemClassTable.get_default_itemclass_list()[:200])
+        self.all_item_classes = set(ItemClass.get_default_itemclass_list()[:200])
         self.in_buy_item_classes = set(list(self.all_item_classes)[5:50])
         self.in_sell_item_classes = set(list(self.all_item_classes)[51:100])
         self.refresh_in_check_item_classes()

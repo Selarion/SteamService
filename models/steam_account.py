@@ -1,59 +1,43 @@
 # -*- coding: utf-8-*-
 import Queue
-import base64
 import json
-import threading
-import traceback
-import urllib
-
-
-from grab import Grab
-import re
-import time
-import rsa
-from controllers.steam_account_controller import SteamAccountController
 
 import logging
+import threading
+import time
+
+from controllers.steam_account_controller import SteamAccountController
+from models.item_class import ItemClass
+
+from models.steam_account_grab import SteamAccountGrab
+from models.steam_account_market_page import MarketPage
+from models.steam_account_item_pages_list import ItemPagesList
+from models.steam_account_inventory_page import InventoryPage
+from models.task_pool import TaskPool
 
 logger = logging.getLogger('grab')
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.DEBUG)
 
 
-class SteamAccount(Grab):
+class SteamAccount:
     def __init__(self, login_steam, pass_steam, code_link):
-        Grab.__init__(self)
-
+        self.grab = SteamAccountGrab(self, login_steam, pass_steam, code_link)
+        self.task_pool = TaskPool()
         self.controller = SteamAccountController(self)
+
         self.steam_account_controller_thread = threading.Thread(target=self.controller.start_route,
                                                                 name="%s SteamAccountControllerThread" % login_steam)
-        self.login_steam = login_steam
-        self.pass_steam = pass_steam
-        self.code_link = code_link
-
-        self.steam_id = None
-        self.session_id = None
-
-        cookiefile = '../cookies/' + login_steam + '.txt'
-        self.setup(
-            headers={
-                'Accept': "text/javascript, text/html, application/xml, text/xml, */*",
-                'Accept-Encoding': 'gzip, deflate',
-                'Accept-Language': 'ru-RU,ru;q=0.8,en-US;q=0.5,en;q=0.3',
-                'User-Agent': 'Mozilla/5.0 (Windows NT 6.3; WOW64; rv:38.0) Gecko/20100101 Firefox/38.0',
-                'X-Prototype-Version': '1.7',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            cookiefile=cookiefile,
-            reuse_cookies=True,
-            debug_post=True,
-            log_file='../log_steam_account/log_' + str(self.login_steam) + '.html'
-        )
+        self.balance = float()
+        self.market_page = MarketPage(self)
+        self.item_pages = ItemPagesList(self)
+        self.inventory_page = InventoryPage(self.grab)
 
     def start(self, output_queue):
-        print "Steam account %s is start!" % self.login_steam
-        login_answer = (steam_account.login(),)
-        if login_answer[0]:
+        print "Steam account %s is start!" % self.grab.login_steam
+        login_answer = self.grab.login()
+        marker_page_answer = self.market_page.refresh_market_page_data()
+        if login_answer[0] and marker_page_answer:
             print 'login sucsess'
             self.controller.set_output_queue(output_queue)
             self.steam_account_controller_thread.start()
@@ -62,140 +46,93 @@ class SteamAccount(Grab):
             print 'login not sucsess'
             print login_answer[1]
 
-    def login(self):
-        def login():
-            def dict_to_string(body_request):
-                a = urllib.urlencode(body_request)
-                a = a.replace('+', '')
-                a = a.replace("%27", "%22")
-                a = a.replace('%25', '%')
-                return a
-
-            def get_auth_code():
-                code_url = "http://localhost:3000" + self.code_link
-                self.go(code_url)
-                code = json.loads(self.response.body)
-                return True, code["code"]
-
-            def get_session_id():
-                self.go('http://steamcommunity.com/')
-                session_id = re.findall('g_sessionID = "(.+?)";', self.response.body)[0]
-                return True, session_id
-
-            def go_to_login_page():
-                url = "https://steamcommunity.com/login/home/?goto=0"
-                self.request(url=url)
-                return True, None
-
-            def get_mod_and_exp():
-                body_request = {
-                    'username': self.login_steam,
-                    'donotcache': str(int(time.time() * 1000))
-                }
-                self.setup(url='https://steamcommunity.com/login/getrsakey/', post=body_request)
-                self.request()
-                str_response_body = self.response.body
-                response_body = json.loads(str_response_body)
-                self._flag_take_mod_and_exp = True
-                return (
-                    True,
-                    response_body["publickey_mod"],
-                    response_body['publickey_exp'],
-                    response_body["timestamp"],
-                )
-
-            def get_enc_password(mod_and_exp):
-                mod = long(mod_and_exp[0], 16)
-                exp = long(mod_and_exp[1], 16)
-                pub_key = rsa.PublicKey(mod, exp)
-                crypto = rsa.encrypt(self.pass_steam, pub_key)
-                enc_password = base64.b64encode(crypto)
-                enc_password = enc_password.replace('+', '%2B')
-                enc_password = enc_password.replace('/', '%2F')
-                enc_password = enc_password.replace('=', '%3D')
-                return True, enc_password
-
-            def do_login(enc_password, timestamp, auth_code):
-                body_request = {
-                    'username': self.login_steam,
-                    "password": enc_password,
-                    "emailauth": "",
-                    "twofactorcode": auth_code,
-                    "loginfriendlyname": "",
-                    "captchagid": "-1",
-                    "captcha_text": "",
-                    "emailsteamid": "",
-                    "rsatimestamp": timestamp,
-                    "remember_login": 'false',
-                    "donotcache": str(int(time.time() * 1000))}
-
-                body_request = dict_to_string(body_request)
-                self.setup(url='https://steamcommunity.com/login/dologin/', post=body_request)
-                self.request()
-                str_response_body = self.response.body
-                response_body = json.loads(str_response_body)
-                print response_body
-
-                if response_body['success'] is True:
-                    self.steam_id = response_body['transfer_parameters']['steamid']
-                    return True, None
-                if response_body['message'] != '':
-                    return False, response_body['message']
-
-            flag_get_auth_code = False
-            flag_get_session_id = False
-            flag_go_to_login_page = False
-            flag_get_mod_and_exp = False
-            flag_get_enc_password = False
-            flag_do_login = False
-            error_message = None
-            login_error_counter = 0
-            while login_error_counter < 3:
-                try:
-                    if not flag_get_auth_code:
-                        flag_get_auth_code, auth_code = get_auth_code()
-                        continue
-                    if not flag_get_session_id:
-                        flag_get_session_id, self.session_id = get_session_id()
-                        continue
-                    if not flag_go_to_login_page:
-                        flag_go_to_login_page = go_to_login_page()
-                        continue
-                    if not flag_get_mod_and_exp:
-                        answer = get_mod_and_exp()
-                        flag_get_mod_and_exp = answer[0]
-                        mod_and_exp = answer[1:3]
-                        timestamp = answer[3]
-                        continue
-                    if not flag_get_enc_password:
-                        flag_get_enc_password, enc_password = get_enc_password(mod_and_exp)
-                    if not flag_do_login:
-                        flag_do_login, error_message = do_login(enc_password, timestamp, auth_code)
-                        if error_message:
-                            return False, error_message
-                    self.go("http://steamcommunity.com/market/")
-                    return True
-                except StandardError:
-                    error_message = traceback.format_exc()
-                    login_error_counter += 1
-                    time.sleep(5)
-            return False, error_message
-        return login()
-
     def start_main_event_loop(self):
-        while True:
-            print 'main event loop'
-            time.sleep(5)
+        print 'start main event loop'
 
+    def check_buy_or_sell_changes(self):
+        answer = self.market_page.refresh_and_compare_market_page_data()
+        checker = answer[0]
+        if checker:
+            added_sell_order = answer[1]
+            if added_sell_order:
+                print '1'
+            remove_sell_order = answer[2]
+            if remove_sell_order:
+                print '2'
+            added_buy_order = answer[3]
+            if added_buy_order:
+                print '3'
+            remove_buy_order = answer[4]
+            if remove_buy_order:
+                print '4'
+        return checker
+
+    def buy_item(self, item_class):
+        url = item_class.get_url()
+        if not self.item_pages.exist_page_with_url(url):
+            self.item_pages.create_and_append_page(url)
+        page = self.item_pages.get_page_by_url(url)
+        sucsess_flag, error_message = page.buy_item()
+        print sucsess_flag
+        print error_message
+
+    def sell_item(self, url, price):
+        item = self.inventory_page.get_item_by_url(url=url)
+        if item:
+            success, error_mesage = item.sell_item(price=price)
+            return success, error_mesage
+        return False, "Item with same URL not found in inventory"
+
+    def get_balance(self):
+        return self.balance
+
+    def set_balance(self, balance):
+        self.balance = balance
+
+    def remove_all_order(self):
+        for order in self.market_page.my_sell_orders:
+            self.market_page.remove_sell_order(order_id=order["order_id"])
+        for order in self.market_page.my_buy_orders:
+            self.market_page.remove_buy_order(order_id=order["order_id"])
+        self.market_page.refresh_market_page_data()
+
+    def sell_all_items(self):
+        self.inventory_page.refresh_items()
+        for item in self.inventory_page.get_list_all_items()[:-5]:
+            url = item.get_url()
+            self.item_pages.create_and_append_page(url)
+            page = self.item_pages.get_page_by_url(url)
+            price = page.item_class.get_lowest_sell_price_in_market() - 0.01
+
+            while True:
+                print "try"
+                success, error_mesage = item.sell_item(price=price)
+                print success
+                print error_mesage
+                if not success:
+                    time.sleep(5)
+                    continue
+                break
+            print "----"
+        print 'all item was sent'
 
 if __name__ == '__main__':
+
+    item_class = ItemClass("http://steamcommunity.com/market/listings/730/P2000%20%7C%20Amber%20Fade%20%28Field-Tested%29")
+    raw_input(json.dumps(item_class))
+
     steam_account = SteamAccount(login_steam='stl_postman_3', pass_steam='NYTuyiJ1', code_link='/bot/?id=3')
+    # steam_account = SteamAccount(login_steam='stl_postman_4', pass_steam='V0NQTSn0', code_link='/bot/?id=4')
     input_queue = Queue.Queue()
     output_queue = steam_account.controller.get_input_queue()
 
     steam_account_thread = threading.Thread(target=steam_account.start, kwargs={'output_queue': input_queue})
     steam_account_thread.start()
 
+    steam_account.buy_item(item_class)
+    steam_account.check_buy_or_sell_changes()
+
     while True:
-        task = raw_input()
+        pass
+        task = raw_input('task?')
         output_queue.put_nowait(task)
