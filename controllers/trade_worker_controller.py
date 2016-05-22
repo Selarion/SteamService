@@ -1,15 +1,13 @@
 # -*- coding: utf-8-*-
 import Queue
-import time
 
 
-class TradeWorkerController():
+class TradeWorkerController(object):
     def __init__(self, trade_worker):
         self.trade_worker = trade_worker
         self.input_queue = Queue.Queue()
         self.output_queue_searcher = None
         self.output_queue_executor = None
-
 
     def start_routing(self):
         while True:

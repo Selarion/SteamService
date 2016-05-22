@@ -1,10 +1,10 @@
 # -*- coding: utf-8-*-
 import Queue
 
-from models.tasks.check_profit_trade_task import CheckProfitTradeTask
+from models.tasks.task_check_profit_trade import CheckProfitTradeTask
 
 
-class SearcherController:
+class SearcherController(object):
     def __init__(self, searcher):
         self.searcher = searcher
         self.input_queue = Queue.Queue()

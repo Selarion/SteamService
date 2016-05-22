@@ -1,7 +1,8 @@
 # -*- coding: utf-8-*-
 import Queue
 
-class ExecutorController:
+
+class ExecutorController(object):
     def __init__(self, executor):
         self.executor = executor
         self.input_queue = Queue.Queue()

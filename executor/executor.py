@@ -1,5 +1,4 @@
 # -*- coding: utf-8-*-
-import random
 import threading
 import time
 
@@ -7,11 +6,11 @@ from models.steam_account_table import SteamAccountsTable
 from controllers.executor_controller import ExecutorController
 
 
-class Executor:
+class Executor(object):
     def __init__(self):
         self.controller = ExecutorController(self)
         self.executor_controller_thread = threading.Thread(target=self.controller.start_routing,
-                                                   name='ExecutorControllerThread')
+                                                           name='ExecutorControllerThread')
 
         self.steam_account_list = SteamAccountsTable.get_steam_account_list()
         self.steam_account_thread_list = list()

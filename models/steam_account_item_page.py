@@ -36,7 +36,10 @@ class ItemPage(BasePage):
             self.grab.setup(url="https://steamcommunity.com/market/createbuyorder/", post=body)
             self.grab.request()
             response = json.loads(self.grab.response.body)
-            if response["success"] == 1:
+
+            if len(response) == 0:
+                error_message = "We not sigh in"
+            elif response["success"] == 1:
                 return True, None
             elif response["success"] == 29:
                 error_message = 'This item is already in trade.'

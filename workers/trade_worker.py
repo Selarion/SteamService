@@ -5,11 +5,11 @@ import time
 from executor.executor import Executor
 from searcher.searcher import Searcher
 from models.item_class import ItemClass
-from models.tasks.check_profit_trade_task import CheckProfitTradeTask
+from models.tasks.task_check_profit_trade import CheckProfitTradeTask
 from controllers.trade_worker_controller import TradeWorkerController
 
 
-class TradeWorker:
+class TradeWorker(object):
     def __init__(self):
         # This block initializes the lists, that you need to trade.
         self.all_item_classes = set()

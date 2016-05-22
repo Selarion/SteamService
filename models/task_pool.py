@@ -3,8 +3,8 @@ import random
 import threading
 import time
 import datetime
+
 from models.tasks.base_task import BaseTask
-from models.tasks.test_task import TestTask
 
 
 class TaskPool:
@@ -34,30 +34,11 @@ class TaskPool:
                     return answer
             return None
 
+    def is_emty(self):
+        with self.__lock:
+            if self.len() == 0:
+                return True
+            return False
+
     def len(self):
         return len(self.task_pool)
-
-
-if __name__ == '__main__':
-    ar = TaskPool()
-
-    def append():
-        for i in xrange(100):
-            task = BaseTask(priority=random.randint(2,10))
-            ar.append(task)
-
-    append()
-
-    for task in ar.task_pool:
-        print "%s - %s" % (task.get_priority(), task.get_start_at_time())
-
-    print ar.len()
-    print '---'
-    actual_task2 = ar.get_actual_task()
-    if actual_task2:
-        print "%s - %s" % (actual_task2.get_priority(), actual_task2.get_start_at_time())
-    print ar.len()
-    actual_task2 = ar.get_actual_task()
-    if actual_task2:
-        print "%s - %s" % (actual_task2.get_priority(), actual_task2.get_start_at_time())
-    print ar.len()

@@ -4,10 +4,15 @@ from peewee import *
 
 
 def take_logpass_from_file():
+    database = None
+    user = None
+    password = None
+    host = None
+    # with open('../../conf/db_info.txt') as f:
     with open('../conf/db_info.txt') as f:
-        data = f.read().split(',')
-        for i in range(len(data)):
-            word = data[i].strip()
+        file_data = f.read().split(',')
+        for i in range(len(file_data)):
+            word = file_data[i].strip()
             word = word.split('=')
             if word[0] == 'database':
                 database = word[1]

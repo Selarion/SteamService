@@ -8,6 +8,7 @@ import time
 
 from controllers.steam_account_controller import SteamAccountController
 from models.item_class import ItemClass
+from models.messages.request_trade_item import RequestTradeItem
 
 from models.steam_account_grab import SteamAccountGrab
 from models.steam_account_market_page import MarketPage
@@ -24,10 +25,10 @@ class SteamAccount:
     def __init__(self, login_steam, pass_steam, code_link):
         self.grab = SteamAccountGrab(self, login_steam, pass_steam, code_link)
         self.task_pool = TaskPool()
-        self.controller = SteamAccountController(self)
-
+        self.controller = SteamAccountController(self.task_pool)
         self.steam_account_controller_thread = threading.Thread(target=self.controller.start_route,
                                                                 name="%s SteamAccountControllerThread" % login_steam)
+
         self.balance = float()
         self.market_page = MarketPage(self)
         self.item_pages = ItemPagesList(self)
@@ -47,7 +48,10 @@ class SteamAccount:
             print login_answer[1]
 
     def start_main_event_loop(self):
-        print 'start main event loop'
+        while True:
+            print steam_account.task_pool.len()
+            print steam_account.task_pool.get_actual_task()
+            time.sleep(5)
 
     def check_buy_or_sell_changes(self):
         answer = self.market_page.refresh_and_compare_market_page_data()
@@ -118,8 +122,8 @@ class SteamAccount:
 
 if __name__ == '__main__':
 
-    item_class = ItemClass("http://steamcommunity.com/market/listings/730/P2000%20%7C%20Amber%20Fade%20%28Field-Tested%29")
-    raw_input(json.dumps(item_class))
+    item_class = ItemClass("http://steamcommunity.com/market/listings/"
+                           "730/P2000%20%7C%20Amber%20Fade%20%28Field-Tested%29")
 
     steam_account = SteamAccount(login_steam='stl_postman_3', pass_steam='NYTuyiJ1', code_link='/bot/?id=3')
     # steam_account = SteamAccount(login_steam='stl_postman_4', pass_steam='V0NQTSn0', code_link='/bot/?id=4')
@@ -129,10 +133,12 @@ if __name__ == '__main__':
     steam_account_thread = threading.Thread(target=steam_account.start, kwargs={'output_queue': input_queue})
     steam_account_thread.start()
 
-    steam_account.buy_item(item_class)
-    steam_account.check_buy_or_sell_changes()
+    # steam_account.buy_item(item_class)
+    # steam_account.check_buy_or_sell_changes()
 
     while True:
-        pass
-        task = raw_input('task?')
+        task = RequestTradeItem(item_class)
         output_queue.put_nowait(task)
+        print('123')
+        time.sleep(1)
+

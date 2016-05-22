@@ -8,7 +8,7 @@ from controllers.searcher_controller import SearcherController
 from grab import Grab
 
 
-class Searcher:
+class Searcher(object):
     def __init__(self):
         self.controller = SearcherController(self)
 

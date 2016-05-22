@@ -2,7 +2,7 @@
 from models.item_class_table import ItemClassTable
 
 
-class ItemClass:
+class ItemClass(object):
 
     @staticmethod
     def get_default_itemclass_list():

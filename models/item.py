@@ -1,9 +1,8 @@
 # -*- coding: utf-8-*-
 import json
-from grab import GrabError
 
 
-class Item:
+class Item(object):
     def __init__(self, grab, id, name, url, pos):
         self.__grab = grab
         self.__id = id

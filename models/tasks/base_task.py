@@ -2,10 +2,10 @@
 import datetime
 
 
-class BaseTask:
+class BaseTask(object):
     def __init__(self, priority=1):
         if not isinstance(priority, int):
-            raise TypeError('"Priority" field must be type "integer"')
+            raise TypeError('"priority" field must be type "integer", not %s' % type(priority))
         self.__priority = priority
         self.__created_at = datetime.datetime.now()
         self.__start_at = datetime.datetime.now()
@@ -21,7 +21,7 @@ class BaseTask:
 
     def set_priority(self, priority):
         if not isinstance(priority, int):
-            raise TypeError('"Priority" field must be type "integer"')
+            raise TypeError('"priority" field must be type "integer", not %s' % type(priority))
         self.__priority = priority
 
     def set_start_at_time(self, start_at):
